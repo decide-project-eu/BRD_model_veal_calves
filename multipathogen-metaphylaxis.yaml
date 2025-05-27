@@ -1,0 +1,1641 @@
+---
+    #   _____                           _
+    #  / ____|                         | |
+    # | |  __  ___ _ __   ___ _ __ __ _| |
+    # | | |_ |/ _ \ '_ \ / _ \ '__/ _` | |
+    # | |__| |  __/ | | |  __/ | | (_| | |
+    #  \_____|\___|_| |_|\___|_|  \__,_|_|
+    
+    #  _____        __                           _   _
+    # |_   _|      / _|                         | | (_)
+    #   | |  _ __ | |_ ___  _ __ _ __ ___   __ _| |_ _  ___  _ __
+    #   | | | '_ \|  _/ _ \| '__| '_ ` _ \ / _` | __| |/ _ \| '_ \
+    #  _| |_| | | | || (_) | |  | | | | | | (_| | |_| | (_) | | | |
+    # |_____|_| |_|_| \___/|_|  |_| |_| |_|\__,_|\__|_|\___/|_| |_|
+    
+    
+    # NAME OF THE DISEASE
+    model_name: BRD_FR_BE_CALVES
+    
+    ## information
+    model_info:
+      authors:
+        - 'Baptiste Sorin, INRAE, Oniris, BIOEPAR, 44300 Nantes, France'
+      contributors:
+        - 'Sébastien Picault, INRAE, Oniris, BIOEPAR, 44300 Nantes, France'
+        - 'Pauline Ezanno, INRAE, Oniris, BIOEPAR, 44300 Nantes, France'
+        - 'Sébastien Assié, INRAE, Oniris, BIOEPAR, 44300 Nantes, France'
+      publications:
+        - 'Picault S, Ezanno P, Assié S. 2019. Combining early hyperthermia detection with metaphylaxis for reducing antibiotics usage in newly received beef bulls at fattening operations: a simulation-based approach. In: van Schaik G, editor. Proceedings of the Conference of the Society for Veterinary Epidemiology and Preventive Medicine (SVEPM).'
+        - 'Picault S, Ezanno P, White B, Amrine D, Assié S. 2022 (subm). Modelling contrasted fattening systems in Europe and the USA and their impact on Bovine Respiratory Disease burden. Submitted to Veterinary Research, ModAH series'
+    
+    #  _______ _
+    # |__   __(_)
+    #    | |   _ _ __ ___   ___
+    #    | |  | | '_ ` _ \ / _ \
+    #    | |  | | | | | | |  __/  
+    #    |_|  |_|_| |_| |_|\___|
+    
+    # TIME INFORMATION
+    time_info:
+      time_unit: hours
+      delta_t: 12
+      total_duration: '70*24' #70 days by half day steps
+    
+    
+    #  _                    _
+    # | |                  | |
+    # | |     _____   _____| |___
+    # | |    / _ \ \ / / _ \ / __|
+    # | |___|  __/\ V /  __/ \__ \
+    # |______\___| \_/ \___|_|___/
+    
+    # LEVELS OF AGENTS
+    levels:
+      calves:
+        desc: 'level of individuals (young calves, FR: males only)'
+        default_prototype: default_calf
+      pen:
+        desc: 'level of the pen'
+        contains:
+          - calves
+        class_name: pen
+        file: multipen_simplified.py
+        aggregation_type: hybrid
+        default_prototype: default_pen
+        aggregate_vars:
+          - name: episode_start_time
+            collect: episode_time #Record of the starting time of an episode (useful for checkup criteria)
+            operator: 'max'
+          - name: last_treat_time
+            collect: treat_time #Record of the last time an individual was treated
+            operator: 'max'
+          - name: pen_nb_alive_treated_distinct
+            collect: 'treated' #Record of the number of living animal treated
+            operator: 'sum'
+          - name: pen_nb_doses_alive
+            collect: 'nb_doses_total' #Sum of the treatment doses used along the simulation
+            operator: 'sum'
+          - name: pen_nb_doses_indiv_alive
+            collect: 'nb_doses_indiv' #Sum of the treatment doses used along the simulation
+            operator: 'sum'
+          - name: pen_nb_doses_metaphylaxis_alive
+            collect: 'nb_doses_metaphylaxis' #Sum of the treatment doses used along the simulation
+            operator: 'sum'
+          - name: pen_incidence_mh
+            collect: 'incidence_mh'
+            operator: 'sum'
+          - name: pen_incidence_brsv
+            collect: 'incidence_brsv'
+            operator: 'sum'
+      multipen:
+        desc: 'level of the multipen'
+        contains: 
+          - pen
+        class_name: Multipen
+        file: multipen_simplified.py
+        aggregation_type: metapopulation
+        aggregate_vars:
+          - name: population
+            collect: total_pen
+            operator: 'sum'
+          - name: metapop_total_I1
+            collect: total_I1
+            operator: 'sum'
+          - name: metapop_total_I2
+            collect: total_I2
+            operator: 'sum'
+          - name: metapop_total_IMH
+            collect: total_IMH
+          - name : metapop_total_NonVax_IMH
+            collect: total_NonVax_IMH
+          - name : metapop_total_Vax_IMH
+            collect: total_Vax_IMH
+          - name : metapop_total_Immune_IMH
+            collect: total_Immune_IMH
+          - name: metapop_total_C
+            collect: total_C
+          - name: metapop_total_Mild
+            collect: total_MildC
+          - name: episode_start_time
+            collect: episode_time
+            operator: 'max'
+          - name: last_treat_time
+            collect: treat_time
+            operator: 'max'
+          - name: metapop_nb_infected
+            collect: 'pen_nb_infected'
+            operator: 'sum'
+          - name: metapop_nb_infected_mh
+            collect: 'pen_nb_infected_mh'
+            operator: 'sum'    
+          - name: metapop_nb_infected_brsv
+            collect: 'pen_nb_infected_brsv'
+            operator: 'sum'        
+          - name: metapop_nb_coinfected
+            collect: 'pen_nb_coinfected'
+            operator: 'sum'            
+          - name: metapop_nb_doses
+            collect: 'pen_nb_doses'
+            operator: 'sum'
+          - name: metapop_nb_doses_indiv
+            collect: 'pen_nb_doses_indiv' #Sum of the treatment doses used along the simulation
+            operator: 'sum'
+          - name: metapop_nb_doses_metaphylaxis
+            collect: 'pen_nb_doses_metaphylaxis' #Sum of the treatment doses used along the simulation
+            operator: 'sum'
+          - name: metapop_brsv_cumulative_incidence
+            collect: 'pen_brsv_cumulative_incidence'
+            operator: 'sum'
+          - name: metapop_mh_cumulative_incidence
+            collect: 'pen_mh_cumulative_incidence'
+            operator: 'sum'
+          - name: metapop_coinfection_cumulative_incidence
+            collect: 'pen_coinfection_cumulative_incidence'
+            operator: 'sum'
+          - name: metapop_cumulative_C
+            collect: 'pen_cumulative_C'
+            operator: 'sum'
+          - name: metapop_cumulative_Mild
+            collect: 'pen_cumulative_Mild'
+            operator: 'sum'
+          - name: metapop_nb_detected
+            collect: 'total_D'
+            operator: 'sum'
+          - name: metapop_nb_deaths
+            collect: 'pen_nb_deaths'
+            operator: 'sum'
+          - name: total_population
+            collect: 'total_pen'
+            operator: 'sum'
+          - name: number_infected_pens
+            collect: 'pen_infected'
+            operator: 'sum'
+          - name: metapop_nb_cases_missed 
+            collect: pen_cases_missed
+            operator: 'sum'
+          - name: metapop_total_exposed
+            collect: total_E
+            operator: 'sum'
+          - name: metapop_nb_treated_distinct
+            collect: pen_nb_treated_distinct
+            operator: 'sum'
+          - name: metapop_incidence_mh
+            collect: 'pen_incidence_mh'
+            operator: 'sum'
+          - name: metapop_incidence_brsv
+            collect: 'pen_incidence_brsv'
+            operator: 'sum'
+          - name: metapop_clinical_duration
+            collect: pen_clinical_duration
+            operator: 'sum'
+          - name: metapop_cumulative_vax
+            collect: 'pen_cumulative_vax'
+            operator: 'sum'
+
+    
+    
+    #  _____
+    # |  __ \
+    # | |__) | __ ___   ___ ___  ___ ___  ___  ___
+    # |  ___/ '__/ _ \ / __/ _ \/ __/ __|/ _ \/ __|
+    # | |   | | | (_) | (_|  __/\__ \__ \  __/\__ \
+    # |_|   |_|  \___/ \___\___||___/___/\___||___/
+    
+    # LIST OF PROCESSES (IN ORDER)
+    processes:
+      calves:
+        - brsv: vaccination
+        - mhaemolytica: mannheimia
+        - pneumonia: pneumo
+        - clinical_state: clinical_signs
+        - detection_state: detection
+        - treat_state: treatment
+        - vax_status: vaccination
+
+    
+    #   _____
+    #  / ____|
+    # | |  __ _ __ ___  _   _ _ __  ___
+    # | | |_ | '__/ _ \| | | | '_ \/ __|
+    # | |__| | | | (_) | |_| | |_) \__ \
+    #  \_____|_|  \___/ \__,_| .__/|___/
+    #                        | |
+    #                        |_|
+    
+    # DESCRIPTION OF HOW TO GROUP INDIVIDUALS
+    grouping:
+      pen:
+        vaccination: [vax_status,brsv,mhaemolytica]
+        treatment: [treat_state]
+        clinical_signs: [clinical_state,brsv,mhaemolytica]
+        pneumo: [pneumonia,clinical_state]
+        detection: [detection_state,clinical_state]
+        mannheimia: [vax_status,mhaemolytica]
+        coinfection: [brsv,mhaemolytica]
+   
+
+    
+    #   _____ _        _         __  __            _     _
+    #  / ____| |      | |       |  \/  |          | |   (_)
+    # | (___ | |_ __ _| |_ ___  | \  / | __ _  ___| |__  _ _ __   ___  ___
+    #  \___ \| __/ _` | __/ _ \ | |\/| |/ _` |/ __| '_ \| | '_ \ / _ \/ __|
+    #  ____) | || (_| | ||  __/ | |  | | (_| | (__| | | | | | | |  __/\__ \
+    # |_____/ \__\__,_|\__\___| |_|  |_|\__,_|\___|_| |_|_|_| |_|\___||___/
+    
+    # DESCRIPTION OF THE STATE MACHINES INVOLVED IN THE MODEL
+    state_machines:
+    
+      vax_status:
+        desc: 'Initial information on vaccinal status of the animal.'
+        states:
+          - Immune:
+              name: 'Immune'
+              desc: 'Immune animal'
+              fillcolor: 'green'
+          - Vax:
+              name: 'Vax'
+              desc: 'Vaccinated animal'
+              fillcolor: 'orange'
+              duration: '28*24'
+              on_enter:
+                - set_upper_var: pen_cumulative_vax
+                  value: 'pen_cumulative_vax+1'
+          - NonVax:
+              name: 'NonVax'
+              desc: 'Non vaccinated animal'
+              fillcolor: 'red'
+        transitions:
+          - from: Vax
+            to: Immune
+            proba: 1
+
+          
+      #--------------------------------
+      # INFECTION
+      #--------------------------------
+      brsv:
+        desc: 'Description of the infectious process'
+        states:
+          - S:
+              name: 'Susceptible'
+              desc: 'Suceptible to infection'
+              fillcolor: 'lightblue'
+          - R:
+              name: 'Resistant'
+              desc: 'Recovered individuals considered resistant based on the time scale considered in fattening'
+              fillcolor: 'green'
+              on_enter:
+                - set_var: infected_brsv
+                  value: 0
+          - S2:
+              name: 'PartiallyResistant'
+              desc: 'Individuals introduced in the pen, which are partially protected by maternal antibodies.'
+              fillcolor: 'green'
+          - I1:
+              name: 'Infectious1'
+              desc: 'Infected and able to transmit pathogens to susceptible individuals. The duration of infection (in the absence of control) is sampled in distribution dur_I.'
+              fillcolor: 'orange'
+              duration: 'dur_I_BRSV'
+              on_enter:
+                - set_var: infected
+                  value: 1
+                - set_var: infected_brsv
+                  value: 1
+                - set_var: incidence_brsv
+                  value: 1
+              on_stay:
+                - set_upper_var: pen_cases_missed
+                  value: 'pen_cases_missed +AND(is_U,Eq(time,total_duration))'
+                  # if no detection occurred before the end of the simulation, count as false negative for sC
+                - set_var: incidence_brsv
+                  value: 0
+              on_exit:
+                - set_upper_var: pen_cases_missed
+                  value: 'pen_cases_missed + is_U'
+                - set_upper_var: pen_infection_duration
+                  value: 'pen_infection_duration + duration_in_brsv'
+#                - set_var: nb_consecutive_doses
+#                  value: 0
+                - set_var: incidence_brsv
+                  value: 0
+          - I2:
+              name: 'Infectious2'
+              desc: 'Infected and able to transmit pathogens to susceptible individuals. These infectious animals are less infectious than first timer, due to the protection by maternal antibodies. The duration of infection (in the absence of control) is sampled in distribution dur_I.'
+              fillcolor: 'red'
+              duration: 'dur_I_BRSV'
+              on_enter:
+                - set_var: infected_brsv
+                  value: 1
+                - set_var: infected
+                  value: 1
+                - set_var: incidence_brsv
+                  value: 1
+              on_stay:
+                - set_upper_var: pen_cases_missed
+                  value: 'pen_cases_missed + AND(is_U,Eq(time,total_duration))'
+                  # if no detection occurred before the end of the simulation, count as false negative for sC
+                - set_var: incidence_brsv
+                  value: 0
+              on_exit:
+                - set_upper_var: pen_cases_missed
+                  value: 'pen_cases_missed + is_U'
+                - set_upper_var: pen_infection_duration
+                  value: 'pen_infection_duration + duration_in_brsv'
+#                - set_var: nb_consecutive_doses
+#                  value: 0
+                - set_var: incidence_brsv
+                  value: 0
+          - E:
+              name: 'exposed'
+              desc: 'State for initializing animals that can eventually become infectious by spontaneous reactivation. This represent an asymptomatic carriage of pathogens, which can lead to the onset of infectiousness just after entering the pen or later. Exposed individuals can however be infected (and become infectious) due to contacts with infectious individuals, in spite of being less sensitive to infection'
+              fillcolor: 'pink'
+              duration: 'dur_E_BRSV'
+
+        transitions:
+          - from: E
+            to: I1
+            cond: 'NOT(infected_mh)' 
+            proba: 1
+            on_cross:
+              - set_upper_var: pen_brsv_cumulative_incidence
+                value: 'pen_brsv_cumulative_incidence+1'
+              - set_upper_var: pen_infected
+                value: '1'
+              - set_var: infected_brsv
+                value: '1'
+            desc: 'exposed animals can become infectious by spontaneous shedding after a delay'
+          - from: E
+            to: I1
+            escape: yes
+            cond: 'NOT(infected_mh)'
+            rate: 'force_of_infection_BRSV' 
+            on_cross:
+              - set_upper_var: pen_brsv__cumulative_incidence
+                value: 'pen_brsv_cumulative_incidence+1'
+              - set_upper_var: pen_first_transmission
+                value: '1'
+              - set_upper_var: pen_infected
+                value: '1'
+              - set_var: infected_brsv
+                value: '1'
+            desc: 'before the end of the carriage period, exposed animals become infectious due to contacts with other infectious animals. This force of infection is supposed smaller than for naive infection'
+          - from: S
+            to: I1
+            cond: 'NOT(infected_mh)'
+            rate: 'force_of_infection_BRSV'
+            desc: 'classical infection of susceptible individuals due to conctacts with other infectious animals'
+            on_cross:
+              - set_upper_var: pen_brsv_cumulative_incidence
+                value: 'pen_brsv_cumulative_incidence+1'
+              - set_upper_var: pen_first_transmission
+                value: '1'
+              - set_upper_var: pen_infected
+                value: '1'
+              - set_var: infected_brsv
+                value: '1'
+          - from: I1
+            to: R
+            cond: 'NOT(evolve_to_death)'
+            proba: 1
+            on_cross:
+              - set_upper_var: nb_recovery
+                value: '1 + nb_recovery'
+              - set_var: infected_brsv
+                value: '0'
+            desc: 'infectious animals naturally return to susceptible state after duration dur_I'
+          - from: I2
+            to: R
+            cond: 'NOT(evolve_to_death)'
+            proba: 1 
+            on_cross:
+              - set_upper_var: nb_recovery
+                value: '1 + nb_recovery'
+              - set_var: infected_brsv
+                value: '0'
+            desc: 'infectious animals naturally return to susceptible state after duration dur_I'
+          - from: S2
+            to: I2
+            cond: 'NOT(infected_mh)'
+            rate: 'force_of_reinfection' #Different from force_of_infection : exposed individuals are believed to have a partial immunity.
+            on_cross:
+              - set_upper_var: pen_brsv_cumulative_incidence
+                value: 'pen_brsv_cumulative_incidence+1'
+              - set_upper_var: pen_infected
+                value: '1'
+              - set_upper_var: pen_first_transmission
+                value: '1'
+              - set_var: infected_brsv
+                value: '1'
+            desc: 'animals previously exposed to the virus and with a partial immunity become infectious due to contacts with other infectious animals. This force of infection is supposed smaller than for naive infection'
+      mhaemolytica:
+        desc: 'Description of the infectious process'
+        states:
+          - SMH:
+              name: 'Susceptible'
+              desc: 'Suceptible to infection'
+              fillcolor: 'lightblue'
+          - RMH:
+              name: 'Resistant'
+              desc: 'Recovered individuals considered resistant based on the time scale considered in fattening'
+              fillcolor: 'green'
+          - IMH:
+              name: 'Infectious'
+              desc: 'Infected and able to transmit pathogens to susceptible individuals. The duration of infection (in the absence of control) is sampled in distribution dur_I.'
+              fillcolor: 'orange'
+              duration: 'dur_I_Mh'
+              on_enter:
+                - set_var: infected
+                  value: 1
+                - set_var: infected_mh
+                  value: 1
+                  value: _time_to_exit_mhaemolytica
+              on_stay:
+                - set_upper_var: pen_cases_missed
+                  value: 'pen_cases_missed +AND(is_U,Eq(time,total_duration))'
+                  # if no detection occurred before the end of the simulation, count as false negative for sC
+                - set_var: incidence_mh
+                  value: 0
+              on_exit:
+                - set_upper_var: pen_cases_missed
+                  value: 'pen_cases_missed + is_U'
+                - set_upper_var: pen_infection_duration
+                  value: 'pen_infection_duration + duration_in_mhaemolytica'
+#                - set_var: nb_consecutive_doses
+#                  value: 0
+                - set_var: incidence_mh
+                  value: 0
+                - set_var: infected_mh
+                  value: 0
+          - EMH:
+              name: 'exposed'
+              desc: 'State for initializing animals that can eventually become infectious by spontaneous reactivation. This represent an asymptomatic carriage of pathogens, which can lead to the onset of infectiousness just after entering the pen or later. Exposed individuals can however be infected (and become infectious) due to contacts with infectious individuals, in spite of being less sensitive to infection'
+              fillcolor: 'pink'
+              duration: 'dur_E_Mh'
+              on_enter:
+                - set_var: reactivation
+                  value: 'random_bool(p_reactivation_Mh)'
+                - set_var: reactivation_Vax
+                  value: 'random_bool(p_reactivation_Mh_Vax)' #The condition for spontaneous shedding is a random boolean with a probability depending on the risk level
+        transitions:
+          - from: EMH
+            to: IMH
+            cond: 'AND(OR(is_I1,is_I2,reactivation),NOT(treatment_preventive))' 
+            proba: 'NOT(is_Immune)' #'p_reactivation'
+            on_cross:
+              - set_upper_var: pen_mh_cumulative_incidence
+                value: 'pen_mh_cumulative_incidence+1'
+              - set_upper_var: pen_infected
+                value: '1'
+              - set_var: infected_mh
+                value: '1'
+          - from: EMH
+            to: IMH
+            cond: 'AND(OR(is_I1,is_I2,reactivation_Vax),NOT(treatment_preventive))' 
+            proba: 'is_Immune' #'p_reactivation'
+            on_cross:
+              - set_upper_var: pen_mh_cumulative_incidence
+                value: 'pen_mh_cumulative_incidence+1'
+              - set_upper_var: pen_infected
+                value: '1'
+              - set_var: infected_mh
+                value: '1'
+            desc: 'exposed animals can become infectious by spontaneous shedding after a delay'
+          - from: EMH
+            to: IMH
+            cond: 'NOT(treatment_preventive)'
+            rate: 'force_of_infection_Mh'
+            escape: yes
+            on_cross:
+              - set_upper_var: pen_mh_cumulative_incidence
+                value: 'pen_mh_cumulative_incidence+1'
+              - set_upper_var: pen_infected
+                value: '1'
+              - set_var: infected_mh
+                value: '1'
+            desc: 'exposed animals can become infectious by spontaneous shedding after a delay'
+          - from: SMH
+            to: IMH
+            cond: 'NOT(treatment_preventive)'
+            rate: 'force_of_infection_Mh'
+            desc: 'classical infection of susceptible individuals due to conctacts with other infectious animals'
+            on_cross:
+              - set_upper_var: pen_mh_cumulative_incidence
+                value: 'pen_mh_cumulative_incidence+1'
+              - set_upper_var: pen_first_transmission
+                value: '1'
+              - set_upper_var: pen_infected
+                value: '1'
+              - set_var: infected_mh
+                value: '1'
+          - from: IMH
+            to: RMH
+            cond: 'NOT(evolve_to_death)'
+            proba: '1'
+            on_cross:
+              - set_upper_var: nb_recovery
+                value: '1 + nb_recovery'
+              - set_var: infected_mh
+                value: '0'
+            desc: 'infectious animals naturally return to susceptible state after duration dur_I'
+          - from: EMH
+            to: RMH
+            cond: 'treatment_preventive' 
+            proba: '1' #'p_reactivation'git add 
+            desc: 'exposed animals can become infectious by spontaneous shedding after a delay'
+
+      #--------------------------------
+      # PNEUMONIA
+      #--------------------------------
+      pneumonia:
+        desc: 'Succesion of pneumonia states'
+        states:
+          - NoPn:
+              name: 'NoPneumonia'
+              desc: 'No lung lesion'
+              fillcolor: 'limegreen'
+          - MildPn:
+              name: 'MildPneumonia'
+              desc: 'Mild pneumonia (lung lesions <1cm)'
+              fillcolor: 'yellow'
+          - ModeratePn:
+              name: 'ModeratePneumonia'
+              desc: 'Moderate pneumonia (lung consolidation [1,3[ cm)'
+              fillcolor: 'orange'
+          - SeverePn:
+              name: 'ModeratePneumonia'
+              desc: 'Severe pneumonia (lung consolidation >=3cm)'
+              fillcolor: 'orange'
+        transitions:
+          - from: NoPn
+            to: MildPn
+            cond: 'is_I1' 
+            proba: 1 
+            desc: 'Pneumonia is starting due to infection'
+          - from: NoPn
+            to: MildPn
+            cond: 'is_I2' 
+            proba: 0.58 
+            desc: 'Pneumonia is starting due to infection'
+          - from: MildPn
+            to: ModeratePn
+            cond: 'is_IMH' 
+            proba: 1
+            desc: 'Pneumonia is starting due to infection'
+          - from: ModeratePn
+            to: SeverePn
+            cond: 'AND(OR(is_I1,is_I2),is_IMH)' 
+            proba: 1
+            desc: 'Pneumonia is starting due to infection'
+          - from: SeverePn
+            to: ModeratePn
+            cond: 'NOT(AND(OR(is_I1,is_I2),is_IMH))' 
+            proba: 1
+            desc: 'Pneumonia is starting due to infection'
+          - from: ModeratePn
+            to: MildPn
+            cond: 'NOT(is_IMH)' 
+            proba: 1
+            desc: 'Pneumonia is starting due to infection'
+          - from: MildPn
+            to: NoPn
+            cond: 'NOT(OR(is_I1,is_I2))'
+            proba: 1
+            desc: 'Pneumonia is starting due to infection'
+
+
+
+
+
+      #--------------------------------
+      # CLINICAL SIGNS
+      #--------------------------------
+      clinical_state:
+        desc: 'Succession of clinical states experienced by infected animals.'
+        states:
+          - A:
+              name: 'Asymptomatic'
+              desc: 'Animal with no clinical signs'
+              fillcolor: 'limegreen'
+              on_enter:
+                - become: undetected
+                - set_var: evolve_to_C
+                  value: 0
+                  # the evolution from mild to severe clinical signs will
+                  # be determined each time the animal enters MildC
+          - MildC:
+              name: 'Mild clinical signs'
+              desc: 'Animal infected, which may have mild clinical signs which will not be detected. Some of these animals will eventually develop severe clinical signs with probability p_severe_clinical (assumed independent from infection duration), after a given duration'
+              fillcolor: 'yellow'
+              duration: 'dur_CS'
+              on_enter:
+                - set_var: evolve_to_C
+                  value: 'random_bool(p_severe_clinical)'
+                  # determine whether or not an animal with mild clinical
+                  # signs will eventually develop severe clinical signs
+
+          - C:
+              name: 'Severe clinical signs'
+              desc: 'Animals with severe clinical signs (depression, anorexia) highly susceptible to trigger detection. A small proportion of animals with severe clinical signs will eventually die from BRD after dur_before_death'
+              fillcolor: 'red'
+              # assign default duration which is the time before dying from severe clinical signs
+              duration: dur_before_death
+              on_enter:
+                - set_var: evolve_to_death
+                  value: 'OR(evolve_to_death, random_bool(p_death))'
+                  # "OR" operator to ensure that animals tagged previously
+                  # as going to die cannot escape their fate
+                - set_var: _time_to_exit_clinical_state
+                  value: 'IfThenElse(evolve_to_death, _time_to_exit_clinical_state, 0)'
+                  # if severe clinical signs are not expected to lead to
+                  # death, reset duration to 0 to allow animals to go back
+                  # to A as soon as they go back to S
+              on_exit:
+                - set_upper_var: pen_clinical_duration
+                  value: 'pen_clinical_duration + duration_in_clinical_state'
+                    
+          - Dead:
+              name: 'Dead'
+              desc: 'Animals that die from BRD. When animals die, record durations if still I or H or T'
+              fillcolor: 'lightgray'
+              autoremove: yes
+              on_enter:
+                - record_change: pen_nb_deaths
+                - set_var: treated_only_once 
+                  value: 0
+                - set_upper_var: pen_infection_duration
+                  value: 'pen_infection_duration + duration_in_brsv * OR(is_I1,is_I2)'
+                - set_upper_var: pen_nb_dead_treated_distinct
+                  value: 'pen_nb_dead_treated_distinct + treated'
+                - set_upper_var: pen_nb_dead_infected_distinct
+                  value: 'pen_nb_dead_infected_distinct + infected'
+                - set_upper_var: pen_nb_doses_dead
+                  value: 'pen_nb_doses_dead + nb_doses_total'
+                - set_upper_var: pen_nb_doses_dead_indiv
+                  value: 'pen_nb_doses_dead_indiv + nb_doses_indiv'
+                - set_upper_var: pen_nb_doses_dead_metaphylaxis
+                  value: 'pen_nb_doses_dead_metaphylaxis + nb_doses_metaphylaxis'
+        transitions:
+          - from: A
+            to: MildC
+            proba: ' OR(is_I1,is_I2,is_IMH)' #being infectious is the only condition required
+            desc: 'Infected animals develop mild (undetectable) clinical signs, some of them will eventually develop severe clinical signs later'
+            on_cross:
+              - set_upper_var: pen_cumulative_Mild
+                value: 'pen_cumulative_Mild+1'
+          - from: MildC
+            to: C
+            cond: 'evolve_to_C' #This condition is randomly set on entering MildC
+            proba: 'OR(is_I1,is_I2,is_IMH)'
+            desc: 'Animals develop detectable (severe) clinical signs after dur_CS if they were marked to develop severe clinical signs (when entering C) and still infected'
+            on_cross:
+              - set_upper_var: pen_cumulative_C
+                value: 'pen_cumulative_C+1'
+          - from: MildC
+            to: A
+            proba: '1 - OR(is_I1,is_I2,is_IMH)' #Reciprocal transition
+            desc: 'Animals return to Asymptomatic after dur_CS if they are not infected anymore'
+          - from: C
+            to: Dead
+            cond: evolve_to_death #Set on entering C
+            proba: 1
+            desc: 'the few animals that have very severe clinical signs will eventually die from BRD'
+          - from: C
+            to: A
+            cond: 'NOT(evolve_to_death)'
+            proba: 'NOT(OR(is_I1,is_I2,is_IMH))'
+            desc: 'Cured animals return to Asymptomatic'
+          - from: C
+            to: A
+            escape: 'NOT(evolve_to_death)'
+            proba: 'NOT(OR(is_I1,is_I2,is_IMH))'
+            desc: 'Cured animals return to Asymptomatic'
+          
+    
+      #--------------------------------
+      # DETECTION
+      #--------------------------------
+      detection_state:
+        desc: 'Description of the state of individuals regarding detection'
+        states:
+          - U:
+              name: 'Undetected'
+              desc: 'Animal considered healthy by the farmer (whatever its real health state).'
+              fillcolor: 'green'
+          - D:
+              name: 'Detected'
+              desc: 'Animal considered infected by the farmer (whatever its real health state).'
+              fillcolor: 'red'
+              on_enter:
+                - set_var: detected
+                  value: 1
+                - record_change: pen_nb_detections
+                - set_upper_var: pen_time_first_detection
+                  value: 'IfThenElse(pen_time_first_detection < 0, time, pen_time_first_detection)' #If this is the first detection, then the time is recorded
+                - set_var: new_episode
+                  value: 'time >= last_treat_time + dur_T + delay_between_episodes' #boolean true if this detection occurs after a given delay 
+                - set_var: episode_time
+                  value: 'IfThenElse(new_episode, time, episode_start_time)' #Record of the start of the episode
+        transitions:
+          - from: U
+            to: D 
+            cond: 'AND( clinical_signs_detection, NOT(evolve_to_death * treated) ) ' #Detection of animals displaying severe clinical signs
+            proba: p_detection
+            desc: 'animals detected by their clinical signs (animals already treated once that will obviously die from BRD are not detected any more)'
+          - from: U
+            to: D 
+            cond: 'AND( mild_clinical_detection, NOT(evolve_to_death * treated) ) ' #detection of animals with mild clinical signs. 
+            proba: p_mild_detection #This event being less likely, this probability is smaller than p_detection
+            desc: 'animals detected by their clinical signs (animals already treated once that will obviously die from BRD are not detected any more)'
+  
+      #--------------------------------
+      # TREATMENTS
+      #--------------------------------
+      treat_state:
+        desc: 'Description of treatment protocol'
+        states:
+          - NT:
+              name: 'Non Treated'
+              desc: 'Non treated animal'
+              fillcolor: lightgray
+              on_enter:
+                - become: undetected
+          - T:
+              name: Treated
+              desc: 'Treated animal'
+              fillcolor: purple
+              duration: dur_T
+              on_enter:
+                - set_var: nb_doses_total
+                  value: 'nb_doses_total+1'
+                - set_var: treated
+                  value: 1
+                - set_var: treat_time
+                  value: 'time'
+                - set_var: nb_consecutive_doses
+                  value: '1 + nb_consecutive_doses'
+                - set_var: treated_only_once
+                  value: 'Eq(nb_doses_total, use_antibioprevention + 1)'
+                - set_upper_var: pen_nb_false_positive
+                  value: 'pen_nb_false_positive + (1 - OR(is_I1,is_I2))'
+                - set_var: treatment_successful
+                  value: 'random_bool(p_recovery)'
+                - set_var: treatment_preventive
+                  value: 'random_bool(p_preventive)'
+        transitions:
+          - from: NT
+            to: T
+            cond: 'AND(NOT(metaphylaxis),is_D, StrictLessThan(nb_doses_total, nb_doses_max), NOT(treated * evolve_to_death))'
+            proba: p_treated
+            desc: 'Treat animal as the result of individual detection. Avoid to re-treat animals which are still detectable but already got the max number of treatments (such animals stay in NT and will be re-detectable after they return to S at the natural end of disease) or animals that have been already treated even some time ago but will obviously die from BRD'
+            on_cross:
+              - set_var: nb_doses_indiv
+                value: '1 + nb_doses_indiv'
+          - from: T
+            to: NT
+            cond: 'NOT(OR(is_MildC,is_C))'
+            proba: 1
+            on_cross:
+              - become: healthy     # to ensure that E -> S
+#              - set_var: nb_consecutive_doses
+#                value: 0
+              - set_var: infected_mh
+                value: '0'
+            desc: 'stop treatment after duration dur_T if the animal has no more clinical signs (recovery occurred before end of treatment)'
+          - from: NT
+            to: T
+            proba: 'metaphylaxis'
+            on_cross:
+              - set_var: nb_doses_metaphylaxis
+                value: '1+nb_doses_metaphylaxis'
+              - set_upper_var: pen_metaphylaxis_done
+                value: 1
+            desc: 'Treat all non-treated animals as the result of several detections, when the number of treated animals reaches a threshold'
+
+          - from: T
+            to: NT
+            cond: 'AND(OR(is_MildC,is_C), treatment_successful,NOT(evolve_to_death))'
+            proba: 1
+            on_cross:
+              - become: healthy     # I -> S (which induces H -> N)
+#              - set_var: nb_consecutive_doses
+#                value: 0
+            desc: 'recovery occurs after treatment of duration dur_T if the treatment was successful'
+          - from: T
+            to: T
+            cond: 'AND(OR(is_MildC,is_C), NOT(treatment_successful), StrictLessThan(nb_doses_total, nb_doses_max))'
+            proba: 1
+            on_cross:
+              - set_var: nb_doses_indiv
+                value: '1 + nb_doses_indiv'
+            desc: 'restart treatment after duration dur_T if no recovery occurred despite treatment, and number of doses below the authorized threshold'
+          - from: T
+            to: NT
+            cond: 'AND(OR(is_MildC,is_C), NOT(treatment_successful), Eq(nb_doses_total, nb_doses_max))'
+            proba: 1
+            desc: 'if no recovery occurred after the maximum number of treatments: abandon (do not reset the number of doses received to avoid restarting treatment immediately - this will be done when leaving I state)'
+    
+    #  _____                               _
+    # |  __ \                             | |
+    # | |__) |_ _ _ __ __ _ _ __ ___   ___| |_ ___ _ __ ___
+    # |  ___/ _` | '__/ _` | '_ ` _ \ / _ \ __/ _ \ '__/ __|
+    # | |  | (_| | | | (_| | | | | | |  __/ ||  __/ |  \__ \
+    # |_|   \__,_|_|  \__,_|_| |_| |_|\___|\__\___|_|  |___/
+    
+    parameters:
+     
+      mean_dur_I:
+        desc: 'duration of the infectious period according to the pathogen'
+        value: 'OR(is_I1,is_I2)*mean_dur_I_BRSV+is_IMH*mean_dur_I_Mh'
+
+
+      # --------------------------------
+      # CLINICAL SIGNS PARAMETER
+      # --------------------------------
+      dur_CS:
+        desc: 'Distribution of the durations of hyperthermia caused by infection, before the apparition of noticeable clinical signs likely to trigger treatment (hours)'
+        value: 'sa_dur_CS*( viral_infection*24*random_beta(2.788759, 0.0220723) + (pasteurella*random_beta(1.08, 1.69)*111 + 12))'
+        source: 'Timsit et al 2011, fig. 4. Min-Max = 12-123; Approx. quartiles: 24, 60, 236. Estimated beta distribution from Q2 and Q3: alpha=2.789, beta=0.022'
+      sa_dur_CS:
+        desc: 'scaling parameter for sensitivity analysis'
+        value: 1 
+      mean_dur_CS:
+        desc: 'Average values of the distributions of the durations before the appraisal of clinical signs for every pathogen'
+        value: 'IfThenElse(viral_infection,24,IfThenElse(pasteurella,55,75))'
+      dur_CS_expected:
+        desc: 'Expected duration of the mild clinical signs, averaged according to the probability of severe clinical signs'
+        value: 'p_severe_clinical*mean_dur_I + (1-p_severe_clinical)*mean_dur_CS'
+      p_severe_clinical:
+        desc: 'probability that an animal with mild clinical signs eventually develops severe clinical signs'
+        value: 'IfThenElse(p_severe_vax_reduction*(p_severe_BRSV*is_I1 +0.1*is_I2)+p_severe_vax_dival_reduction*is_IMH*0.65 <= 1, p_severe_vax_reduction*(p_severe_BRSV*is_I1 +0.1*is_I2)+p_severe_vax_dival_reduction*is_IMH*0.65,1)'
+      p_severe_BRSV: 
+        desc: 'probability of severe signs for BRSV'
+        value: 0.2
+      p_severe_Mh: 
+        desc: 'probability of severe signs for BRSV'
+        value: 0.65
+      p_severe_vax_dival_reduction:
+        desc: 'Reduction factor for M.haemolytica due to divalent vaccine'
+        value: ' AND(is_Immune,vax_divalent)*odd_ratio_severe_clinical_vax+NOT(AND(is_Immune,vax_divalent))'
+      p_severe_vax_reduction:
+        desc: 'Reduction factor for p_severe_clinical due to BRSV vaccine'
+        value: '(is_Immune*odd_ratio_severe_clinical_vax+OR(is_NonVax,is_Vax))'
+      odd_ratio_severe_clinical_vax:
+        desc: 'Odd ratio of developping severe clinical signs when vaccinated'
+        value: 0.38
+      p_death:
+        desc: 'probability that an animal with severe clinical signs eventually dies from BRD'
+        value: '0.05+0.35*AND(OR(is_I1,is_I2),is_IMH)'
+      dur_before_death:
+        desc: 'distribution of the durations of severe clinical signs before death (only for animals that will die from BRD)'
+        value: '10*24'
+      vax_duration_reduction:
+        desc: 'Reduction factor of the infectious period due to vaccination (cf figures MSD trial)'
+        value: 0.2
+      # --------------------------------
+      # EPIDEMIOLOGICAL PARAMETERS BRSV
+      # --------------------------------
+      total_not_infected_BRSV:
+        desc: 'not infected individuals'
+        value: 'total_S + total_E'
+      dur_I_BRSV:
+        desc: 'distribution of durations in the infectious state'
+        # value: 'poisson(mean_dur_I)'
+        value:  'sa_dur_I_BRSV*(1-is_Immune*vax_duration_reduction)*random_gamma(dur_I_shape_BRSV, dur_I_scale_BRSV)'
+        source: 'In days : M.haemolytica: range=(6;10), median=8. M.bovis: range = (14;28), median=21. BRSV: range=(4;8), median=6'
+      sa_dur_I_BRSV:
+        desc: 'scaling factor for sensitivity analysis.'
+        value: 1
+      dur_I_shape_BRSV:
+        desc: 'shape of the gamma distribution for I durations - high values: close to constant, low values: long tail'
+        value: 21.89005
+      mean_dur_I_BRSV:
+        desc: 'Average duration of the infectious period (in hours)'
+        value: 'dur_I_scale_BRSV*dur_I_shape_BRSV'
+      dur_I_scale_BRSV:
+        desc: 'scale of the gamma distribution for I durations - high values: close to constant, low values: long tail'
+        value: 7.007088
+      p_reactivation_BRSV:
+        desc: 'Probability of reactivation i.e spontaneous shedding of pathogens by exposed individuals. To mimic stress prior to arrival, This probability depends on the risk level of the individual.'
+        value: 0.91
+      dur_E_BRSV:
+        desc: 'Distribution of the durations of asymptomatic carriage of BRD pathogens, shifted by the use of long-acting antimicrobials when antibioprevention is performed'
+        value: '(default_dur_E_BRSV)'
+      mean_dur_E_BRSV:
+        desc: 'average duration in carriage state (in hours)'
+        value: '3*24'
+        source: 'calibrated for scenarios: FR/FRref: 2*24 '
+      dur_E_shape_BRSV:
+        desc: 'shape of the gamma distribution for E durations - high values: close to constant, low values: long tail'
+        value: 5
+      default_dur_E_BRSV:
+        desc: 'Default distribution of the durations of asymptomatic carriage of BRD pathogens'
+        value: 'random_gamma(dur_E_shape_BRSV, mean_dur_E_BRSV/dur_E_shape_BRSV)'
+        source: 'testing alternative distributions : gamma law to have a few high values'
+      shedding_reduction_factor:
+        desc: 'factor reducing the transmission rate when an individual is infection more than once'
+        value: ' R0_endemic/(R0_naive*partial_immunity_factor) '
+
+
+      transmission_I1_BRSV:
+        desc: 'average value of individual transmission rate as a result of the medium risk level in the breeder farm (per hour)'
+        value: 'R0_naive/mean_dur_I_BRSV'
+      transmission_I2_BRSV:
+        desc: 'average value of individual transmission rate as a result of the medium risk level in the breeder farm (per hour)'
+        value: 'transmission_I1_BRSV*shedding_reduction_factor'
+
+      pen_contribution_BRSV:
+        desc: 'average value of individual transmission rate, assumed the geometric average of the transmission rates resulting from the risk levels in the breeder farm and in the fattening farm (per hour)'
+        value: '(total_I1 * transmission_I1_BRSV + total_I2 * transmission_I2_BRSV)'
+      interpen_contact_rate:
+        desc: 'average contact rate between two pens in the same farm'
+        value: 0.1
+      interpen_contribution_BRSV:
+        desc: 'contribution of the others pens of the premisces to the force of infection'
+        value: '((metapop_total_I1 -total_I1)*transmission_I1_BRSV  + (metapop_total_I2 -total_I2)*transmission_I2_BRSV)' 
+      force_of_infection_BRSV:
+        desc: 'The force of infection experienced by each susceptible animal depends on the sum of individual infectiousness and exposure to general microbism of the farm'
+        value: '( pen_contribution_BRSV + interpen_contact_rate*interpen_contribution_BRSV )/(total_pen+interpen_contact_rate*(total_population-total_pen))'
+        desc: 'assuming frequency-dependent force of infection'
+      force_of_reinfection:
+        desc: 'force of infection for individuals that have already been infected to the pathogen. For an average agent, this force is equal to 0.25*foi for naive infection'
+        source: 'https://doi.org/10.1093/infdis/163.4.693'
+        value: 'partial_immunity_factor*force_of_infection_BRSV'
+      partial_immunity_factor:
+        desc: 'factor of sensitivity applied to the force of infection when a partially imune individual is reinfected.'
+        value: '0.25'
+      R0_naive:
+        desc: 'reproduction number in a fully naive population'
+        value: 'sa_R0_naive*(OR(is_NonVax,is_Vax)*3.1 +is_Immune*3.1/vaccine_shedding_reduction)'
+      sa_R0_naive:
+        desc: 'factor for sensitivity analysis'
+        value: 1
+      R0_endemic:
+        desc: 'reproduction number in an endemic situation'
+        value: 'sa_R0_endemic*(OR(is_NonVax,is_Vax)*1.14+is_Immune*1.14/vaccine_shedding_reduction)'
+      sa_R0_endemic:
+        desc: 'factor for sensitivity analysis'
+        value: 1
+      vaccine_shedding_reduction:
+        desc: 'factor reducing the viral shedding due to vaccination (source Nuijten et al 2020)'
+        value: 2.5
+      sa_transmission:
+        desc: 'scaling parameter for sensitivity analysis on transmission rates.'
+        value: 1
+      sa_reactivation:
+        desc: 'scaling parameter for sensitivity analysis on opportunistic infections.'
+        value: 1
+
+
+
+
+
+      # --------------------------------
+      # EPIDEMIOLOGICAL PARAMETERS Mhaemolytica
+      # --------------------------------
+      
+      dur_I_Mh:
+        desc: 'distribution of durations in the infectious state'
+        # value: 'poisson(mean_dur_I)'
+        value:  'sa_dur_I_Mh*(1-is_Immune*vax_duration_reduction)*random_gamma(dur_I_shape_Mh, dur_I_scale_Mh)'
+        source: 'In days : M.haemolytica: range=(6;10), median=8. M.bovis: range = (14;28), median=21. BRSV: range=(4;8), median=6'
+      sa_dur_I_Mh:
+        desc: "factor for sensitivity analysis"
+        value: 1
+      dur_I_shape_Mh:
+        desc: 'shape of the gamma distribution for I durations - high values: close to constant, low values: long tail'
+        value: 243.7791
+      mean_dur_I_Mh:
+        desc: 'Average duration of the infectious period (in hours)'
+        value: 'dur_I_scale_Mh*dur_I_shape_Mh'
+      dur_I_scale_Mh:
+        desc: 'scale of the gamma distribution for I durations - high values: close to constant, low values: long tail'
+        value: '0.784551'
+      p_reactivation_Mh:
+        desc: 'Probability of reactivation i.e spontaneous shedding of pathogens by exposed individuals. To mimic stress prior to arrival, This probability depends on the risk level of the individual.'
+        value: 'sa_reactivation*0.28'
+      p_reactivation_Mh_Vax:
+        desc: 'Probability of reactivation i.e spontaneous shedding of pathogens by exposed individuals. To mimic stress prior to arrival, This probability depends on the risk level of the individual.'
+        value: '0.28/IfThenElse(vax_divalent,incidence_risk_reduction,1)'
+      dur_E_Mh:
+        desc: 'Distribution of the durations of asymptomatic carriage of BRD pathogens, shifted by the use of long-acting antimicrobials when antibioprevention is performed'
+        value: '(default_dur_E_Mh + use_antibioprevention * shifted_dur_E)'
+      mean_dur_E_Mh:
+        desc: 'average duration in carriage state (in hours)'
+        value: '1*24'
+        source: 'calibrated for scenarios: FR/FRref: 2*24 '
+      dur_E_shape_Mh:
+        desc: 'shape of the gamma distribution for E durations - high values: close to constant, low values: long tail'
+        value: 5
+      default_dur_E_Mh:
+        desc: 'Default distribution of the durations of asymptomatic carriage of BRD pathogens'
+        value: 'random_gamma(dur_E_shape_Mh, mean_dur_E_Mh/dur_E_shape_Mh)'
+        source: 'testing alternative distributions : gamma law to have a few high values'
+      shifted_dur_E:
+        desc: 'Shift in the distribution of the durations of asymptomatic carriage of BRD pathogens due to the use of long-acting antimicrobials'
+        value: 'random_gamma(shift_dur_E_shape, mean_shift_dur_E/shift_dur_E_shape)'
+      mean_shift_dur_E:
+        desc: 'average duration of the delay induced by long-acting antimicrobials'
+        value: '24 * 15'
+        source: 'calibration'
+      shift_dur_E_shape:
+        desc: 'shape of the gamma distribution for E shift'
+        value: 20
+      transmission_Mh:
+        desc: 'average value of individual transmission rate as a result of the medium risk level in the breeder farm (per hour)'
+        value: 'sa_transmission*0.005'      
+      sensitivity_lowrisk:
+        desc: 'parameter regulating the sensitivity of low risk susceptible individuals'
+        value: '1'
+
+      pen_contribution_Mh:
+        desc: 'average value of individual transmission rate, assumed the geometric average of the transmission rates resulting from the risk levels in the breeder farm and in the fattening farm (per hour)'
+        value: '(total_IMH *transmission_Mh ) '
+      interpen_contact_rate:
+        desc: 'average contact rate between two pens in the same farm'
+        value: 0.1
+      interpen_contribution_Mh:
+        desc: 'contribution of the others pens of the premisces to the force of infection'
+        value: '((metapop_total_IMH -total_IMH)*transmission_Mh )' 
+      force_of_infection_Mh:
+        desc: 'The force of infection experienced by each susceptible animal depends on the sum of individual infectiousness and exposure to general microbism of the farm'
+        value: '( pen_contribution_Mh + interpen_contact_rate*interpen_contribution_Mh )/(total_pen+interpen_contact_rate*(total_population-total_pen))'
+        desc: 'assuming frequency-dependent force of infection'
+
+      pen_nb_coinfected:
+              desc: 'total number of animals infected at time t'
+              value: 'total_I1_IMH + total_I2_IMH  '
+      pen_nb_infected:
+        desc: 'total number of animals infected at time t'
+        value: 'total_I1_SMH + total_I2_SMH + total_I1_IMH + total_I2_IMH + total_I1_RMH + total_I2_RMH + total_S_IMH + total_S2_IMH + total_R_IMH '
+      pen_nb_infected_mh:
+        desc: 'total number of animals infected at time t'
+        value: 'total_I1_IMH + total_I2_IMH + total_S_IMH + total_S2_IMH + total_R_IMH '
+      pen_nb_infected_brsv:
+        desc: 'total number of animals infected at time t'
+        value: 'total_I1_SMH + total_I2_SMH + total_I1_IMH + total_I2_IMH + total_I1_RMH + total_I2_RMH  '
+      proportion_infected_mh:
+        desc: 'number of mh infected individuals over total population'
+        value: '100*metapop_nb_infected_mh/total_population'
+      proportion_infected_brsv:
+        desc: 'number of brsv infected individuals over total population'
+        value: '100*metapop_nb_infected_brsv/total_population'
+      proportion_coinfected:
+        desc: 'number of individuals infected by both pathogens over total population'
+        value: '100*metapop_nb_coinfected/total_population'
+      incidence_rate_mh: 
+        desc: 'incidence rate for M.haemolytica'
+        value: '100*metapop_incidence_mh/total_population'
+      incidence_rate_brsv: 
+        desc: 'incidence rate for BRSV'
+        value: '100*metapop_incidence_brsv/total_population'
+      pen_incidence_rate_mh: 
+        desc: 'incidence rate for M.haemolytica'
+        value: '100*pen_incidence_mh/total_pen'
+      pen_incidence_rate_brsv: 
+        desc: 'incidence rate for BRSV'
+        value: '100*pen_incidence_brsv/total_pen'
+      #--------------------------------
+      # DETECTION
+      #--------------------------------
+      Se_MildC:
+        desc: 'sensitivity of BRD detection based on mild clinical signs'
+        value: 0.5
+        source: 'Timsit et al 2016 - TODO discuss'
+      p_detection:
+        desc: 'probability to detect an hyperthermic animal once the detection condition is fulfilled (per hour)'
+        value: 1
+      p_mild_detection: 
+        desc: 'probability to detect an animal with mild clinical signs'
+        value: '1-(1-Se_MildC)**(1/dur_CS_expected)'
+      clinical_signs_detection:
+        desc: 'detection of infected animals based on clinical signs'
+        value: 'is_C'
+      mild_clinical_detection:
+        desc: 'detection of infected animals based on clinical signs'
+        value: 'is_MildC'
+
+
+    
+      #--------------------------------
+      # TREATMENT
+      #--------------------------------
+      dur_T:
+        desc: 'Constant duration before assessing the efficacy of the treatment (hours)'
+        value: 48
+        source: 'average treatment protocol (discussed with professors in veterinary medicine)'
+      p_treated:
+        desc: 'probability that a deteced animal is treated'
+        value: 1
+        source: 'expert opinion'
+      p_recovery:
+        desc: 'probability that a treated animal recovers (for 1 dose)'
+        value: IfThenElse(OR(is_I1,is_I2),0.3*is_IMH,0.71*is_IMH)
+        source: 'treatment protocol discussed with professors in veterinary medicine'
+      p_preventive:
+        desc: 'probability that a treated animal recovers is protected from future infection'
+        value: 'NOT(is_IMH)*0.71'
+        source: 'treatment protocol discussed with professors in veterinary medicine'
+      nb_doses_max:
+        desc: 'maximal number of consecutive doses for the same animal'
+        value: 3
+        source: 'treatment protocol discussed with professors in veterinary medicine'
+      use_antibioprevention:
+        desc: 'Boolean to indicate whether antibioprevention is used of not. With antibioprevention, all animals in the pen start with one dose (but proportion_carrier must be adjusted subsequently to account for treatment, e.g. * (1 - p_recovery))'
+        value: 0
+      delay_between_episodes:
+        desc: 'duration between two BRD episodes at pen scale, i.e. between the end of all treatments and the detection of a new clinical animal'
+        value: '10*24'
+        source: '10 days is the delay used for testing new drugs (personnal communication, S. Assie)'
+      pen_nb_treated_distinct:
+        desc: 'total number of distinct animals treated at least once in the pen over time'
+        value: 'pen_nb_alive_treated_distinct + pen_nb_dead_treated_distinct'
+      pen_nb_doses:
+        desc: 'total number of doses given at pen scale over time'
+        value: 'pen_nb_doses_alive + pen_nb_doses_dead'
+      pen_nb_doses_indiv:
+        desc: 'total number of doses given at pen scale over time'
+        value: 'pen_nb_doses_indiv_alive + pen_nb_doses_dead_indiv'
+      pen_nb_doses_metaphylaxis:
+        desc: 'total number of doses given at pen scale over time'
+        value: 'pen_nb_doses_metaphylaxis_alive + pen_nb_doses_dead_metaphylaxis'
+      use_metaphylaxis_pen:
+        desc: 'boolean, 1 to enforce metaphylaxis, 0 otherwise. Metaphylaxis consists in treating all animals of the pen when the number of animals already detected and treated becomes greater than a given threshold'
+        value: 0
+      use_metaphylaxis_farm:
+        desc: 'boolean, 1 to enforce metaphylaxis, 0 otherwise. Metaphylaxis consists in treating all animals of the pen when the number of animals already detected and treated becomes greater than a given threshold'
+        value: 0
+      metaphylaxis_threshold:
+        desc: 'parameter chosing the relevant threshold according to the chosen criterion'
+        value: 'IfThenElse(use_pente_incidence, pente_threshold,IfThenElse(use_severity_incidence, severity_threshold,IfThenElse(use_metaphylaxis_pen,metaphylaxis_threshold_conventional* total_pen,metaphylaxis_threshold_conventional* total_population)))'
+      metaphylaxis_threshold_conventional:
+        desc: 'number of treated cases above which all animals of the pen get treated (even if not detected)'
+        value: 0.1 
+      metaphylaxis:
+        desc: 'Collective treatment at farm or pen scale'
+        value: 'OR(metaphylaxis_pen_scale,metaphylaxis_farm_scale)'
+      metaphylaxis_pen_scale:
+        desc: 'collective treatment when the pen scale treshold is reached'
+        value: 'AND(use_metaphylaxis_pen, NOT(pen_metaphylaxis_done), compute_collective_treatment_decision)'
+      metaphylaxis_farm_scale: 
+        desc: 'conditions required to trigger collective treatment'
+        value: 'AND(use_metaphylaxis_farm,NOT(pen_metaphylaxis_done), metapop_nb_treated_distinct >= metaphylaxis_threshold)'
+      pente_threshold: 
+        desc: 'threshold used for metaphylaxis on slope criterion'
+        value: 'pente_threshold_factor*pen_size'
+      pente_threshold_factor: 
+        desc: 'threshold used for metaphylaxis on slope criterion'
+        value: '0.05'
+      severity_threshold: 
+        desc: 'threshold used for metaphylaxis on severity criterion'
+        value: '1.5'
+      use_pente_incidence:
+        desc: 'Boolean to indicate the method for deciding to implement a collective treatment. 1: implement when pente > metaphylaxis_threshold ; 0: implement when cumulate incidence > metaphylaxis_threshold'
+        value: '0'
+      pente:
+        desc: 'pente'
+        value: 'DIV(pen_nb_detections, ((time - time_debut + delta_t) / 24))'
+
+      use_severity_incidence:
+        desc: 'Boolean to indicate the method for deciding to implement a collective treatment. 1: implement when daily incidence > metaphylaxis_threshold ; 0: implement when cumulate incidence > metaphylaxis_threshold'
+        value: '0'
+      compute_collective_treatment_decision:
+        desc: 'decide whether a collective treatment must be done or not - which can be triggered either by a daily incidence threshold, or by a cumulate incidence threshold'
+        value: 'use_metaphylaxis_pen * float(IfThenElse(use_pente_incidence, pente, IfThenElse(use_severity_incidence, severity, pen_nb_treated_distinct)) > metaphylaxis_threshold )'
+      severity:
+        desc: 'threshold for collective treatment based on MC and SC detected, with SC most important'
+        value: 'alpha * total_D_MildC + beta * total_D_C'
+      alpha:
+        desc: 'proportion/ponderation of MC'
+        value: '0.1'
+      beta:
+        desc: 'proportion/ponderation of SC'
+        value: '1-alpha'
+      mean_severity:
+        desc: 'mean of the severity across all pens'
+        value: 'global_severity/number_pens'
+
+    
+      #--------------------------------
+      # INITIAL CONDITIONS
+      #--------------------------------
+      pen_size:
+        desc: 'initial size of the pen'
+        value: 10
+        source: 'French system: Assie, 10 animals '
+      number_pens:
+        desc: 'number of initial pens'
+        value: 3
+      sorted_pens:
+        desc: 'boolean true if pens are built according to risk levels'
+        value: 0  
+      proportion_carrier_low_BRSV:
+        desc: 'initial proportion of low risk exposed animals'
+        value: 'viral_infection*0.01'
+        source: 'Set on worst case scenario : all animal have been exposed before their arrival'
+      proportion_carrier_medium_BRSV:
+        desc: 'initial proportion of medium risk exposed animals'
+        value: 'viral_infection*0.03'
+        source: 'Set on worst case scenario : all animal have been exposed before their arrival'
+      proportion_carrier_high_BRSV:
+        desc: 'initial proportion of high risk exposed animals'
+        value: 'viral_infection*0.05'
+        source: 'Set on worst case scenario : all animal have been exposed before their arrival'
+      proportion_susceptible_low_BRSV:
+        desc: 'initial proportion of low risk exposed animals'
+        value: '1-(proportion_recovered_low_BRSV+proportion_carrier_low_BRSV)'
+        source: 'Set on worst case scenario : all animal have been exposed before their arrival'
+      proportion_susceptible_medium_BRSV:
+        desc: 'initial proportion of medium risk exposed animals'
+        value: '1-(proportion_recovered_medium_BRSV+proportion_carrier_medium_BRSV)'
+        source: 'Set on worst case scenario : all animal have been exposed before their arrival'
+      proportion_susceptible_high_BRSV:
+        desc: 'initial proportion of high risk exposed animals'
+        value: '1-(proportion_recovered_high_BRSV+proportion_carrier_high_BRSV)'
+        source: 'Set on worst case scenario : all animal have been exposed before their arrival'
+      proportion_recovered_low_BRSV:
+        desc: 'intial proportion of low risk individuals with partial immunity'
+        value: '0.78*viral_infection'
+      proportion_recovered_medium_BRSV:
+        desc: 'intial proportion of medium risk individuals with partial immunity'
+        value: '0.621*viral_infection'
+      proportion_recovered_high_BRSV:
+        desc: 'intial proportion of high risk individuals with partial immunity'
+        value: '0.47*viral_infection' 
+      proportion_susceptible_low_Mh:
+        desc: 'initial proportion of low risk exposed animals'
+        value: '1-proportion_carrier_low_Mh'
+        source: 'Set on worst case scenario : all animal have been exposed before their arrival'
+      proportion_susceptible_medium_Mh:
+        desc: 'initial proportion of medium risk exposed animals'
+        value: '1-proportion_carrier_medium_Mh'
+        source: 'Set on worst case scenario : all animal have been exposed before their arrival'
+      proportion_susceptible_high_Mh:
+        desc: 'initial proportion of high risk exposed animals'
+        value: '1-proportion_carrier_high_Mh'
+        source: 'Set on worst case scenario : all animal have been exposed before their arrival'        
+      proportion_carrier_low_Mh:
+        desc: 'initial proportion of low risk exposed animals'
+        value: 'pasteurella*IfThenElse(vax_divalent,0.26,0.48)'
+        source: 'Set on worst case scenario : all animal have been exposed before their arrival'
+      proportion_carrier_medium_Mh:
+        desc: 'initial proportion of medium risk exposed animals'
+        value: 'pasteurella*0.48'
+        source: 'Set on worst case scenario : all animal have been exposed before their arrival'
+      proportion_carrier_high_Mh:
+        desc: 'initial proportion of high risk exposed animals'
+        value: 'pasteurella*0.72'
+        source: 'Set on worst case scenario : all animal have been exposed before their arrival'
+      prop_lowrisk:
+        desc: 'proportion of low risk animals in a pen'
+        value: 0
+      prop_mediumrisk:
+        desc: 'proportion of medium risk animals in a pen'
+        value: 1
+      prop_highrisk:
+        desc: 'proportion of high risk animals in a pen'
+        value: 0
+      vax_at_purchase:
+        desc: 'boolean true if  animals are vaccinated at purchase'
+        value: 1
+      vax_on_arrival:
+        desc: 'boolean true if  animals are vaccinated on arrival'
+        value: 0
+      coverage:
+        desc: 'vaccinal coverage'
+        value: 0
+      vax_divalent:
+        desc: 'boolean true if the vaccine is divalent'
+        value: 1
+      incidence_risk_reduction:
+        desc: 'reduction of incidence risk due to vaccine. equals to 9.7/22.7 (source: assié 2009.)'
+        value: 2.34
+      prop_vax_at_purchase:
+        desc: "proportion of animals vaccinated at purchase"
+        value: 'vax_at_purchase*coverage'
+      prop_vax_on_arrival:
+        desc: "proportion of animals vaccinated on arrival"
+        value: 'vax_on_arrival*coverage'
+
+
+      viral_infection:
+        desc: 'boolean true if the pathogen circulating is BRSV'
+        value: 0
+      pasteurella:
+        desc: 'boolean true if the pathogen circulating is M.haemolytica'
+        value: 0
+      mycoplasma: 
+        desc: 'boolean true if the pathogen circulating is M.bovis'
+        value: 0
+      # --------------------------------
+      # SENSITIVITY ANALYSIS
+      # --------------------------------
+      dur_H_fact:
+        desc: 'multiplicative factor used to modulate dur_H '
+        value: 1
+    
+      dur_CS_fact:
+        desc: 'multiplicative factor used to modulate dur_CS'
+        value: 1
+    
+    #   _____ _        _
+    #  / ____| |      | |
+    # | (___ | |_ __ _| |_ _____   ____ _ _ __ ___
+    #  \___ \| __/ _` | __/ _ \ \ / / _` | '__/ __|
+    #  ____) | || (_| | ||  __/\ V / (_| | |  \__ \
+    # |_____/ \__\__,_|\__\___| \_/ \__,_|_|  |___/
+    
+    # VARIABLES OF THE AGENTS
+    statevars:
+      total_multipen:
+        desc: 'test'
+      #--------------------------------
+      # AGGREGATE VARIABLES AT pen SCALE
+      #--------------------------------
+      pen_force_of_infection:
+        desc: 'force of infection at pen scale'
+      pen_time_first_detection:
+        desc: 'date of first detection in the pen'
+      pen_nb_false_positive:
+        desc: 'total number of doses given to non infected animals over time'
+      pen_nb_detections:
+        desc: 'total number of detections episodes over time'
+      episode_start_time:
+        desc: 'time when the first BRD episode at pen scale was detected, including possible false positives (hours)'
+      pen_infection_duration:
+        desc: 'cumulate infection duration at pen scale'
+      pen_clinical_duration:
+        desc: 'cumulate duration of the presence of animals with severe clinical signs in the pen'
+      pen_nb_alive_treated_distinct:
+        desc: 'total number of distinct animals treated in the pen over time'
+      pen_nb_dead_treated_distinct:
+        desc: 'total number of distinct animals that were treated in the pen at least once but died'
+      pen_nb_alive_infected_distinct:
+        desc: 'total number of distinct animals infected at least once in the pen over time'
+      pen_cases_missed:
+        desc: 'Number of false negative in the pen over time'
+      pen_nb_alive_detected_distinct:
+        desc: 'total number of distinct animals detected at least once in the pen over time'
+      pen_nb_doses_alive:
+        desc: 'total number of doses given at pen scale over time'
+      pen_nb_doses_dead:
+        desc: 'total number of doses given to animals that died'
+      pen_nb_doses_dead_indiv:
+        desc: 'total number of doses given to animals that died'
+      pen_nb_doses_dead_metaphylaxis:
+        desc: 'total number of doses given to animals that died'
+      pen_nb_deaths:
+        desc: 'total number of dead animals over time'
+      pen_mh_cumulative_incidence:
+        desc: 'total number of infections that occured in one pen over the course of the simulation'
+      pen_brsv_cumulative_incidence:
+        desc: 'total number of infections that occured in one pen over the course of the simulation'
+      pen_coinfection_cumulative_incidence:
+        desc: 'total number of infections that occured in one pen over the course of the simulation' 
+      nb_recovery: 
+        desc: 'test for recovery'
+      pen_cumulative_vax:
+        desc: 'cumulative number of individuals vaccinated'  
+      pen_infected:
+        desc: '1 if the pen has been infected at some point, 0 otherwise (= pen never infected)'
+      pen_first_transmission:
+        desc: '1 if the pen has been infected through horizontal transmission at some point, 0 otherwise (= never infected or no horizontal transmission)'
+      pen_cumulative_C: 
+        desc: 'cumulative number of individuals with severe clinical signs' 
+      pen_cumulative_Mild: 
+        desc: 'cumulative number of individuals with mild clinical signs'             
+
+      #--------------------------------
+      # INFECTION (Animal Level)
+      #--------------------------------
+      _time_to_exit_brsv:
+        desc: 'time step after which agents are allowed to leave current health state (EMULSION built-in)'
+      _time_to_exit_mhaemolytica:
+        desc: 'time step after which agents are allowed to leave current health state (EMULSION built-in)'
+      # infection_duration:
+      #   desc: 'total duration of infection of an animal over time'
+      infected:
+        desc: 'boolean, 1 if animal infected at least once, 0 otherwise'
+      infected_brsv:
+        desc: 'boolean, 1 if animal infected by brsv, 0 otherwise'
+      infected_mh:
+        desc: 'boolean, 1 if animal infected by brsv, 0 otherwise'
+      incidence_mh:
+        desc: 'record new M.haemolytica cases per time step'
+      incidence_brsv:
+        desc: 'record new BRSV cases per time step'
+
+
+     
+    #--------------------------------
+      # CLINICAL SIGNS
+      #--------------------------------
+      evolve_to_death:
+        desc: 'indicate whether or not an animal with severe clinical signs will eventually die from BRD'
+      evolve_to_C:
+        desc: 'indicate whether or not an animal with mild clinical signs will eventually develop severe clinical signs if still infected after dur_CS'
+      _time_to_exit_clinical_state:
+        desc: 'time step after which agents are allowed to leave current clinical state (EMULSION built-in)'
+      #--------------------------------
+      # DETECTION
+      #--------------------------------
+      detected:
+        desc: 'boolean, 1 if animal detected at least once, 0 otherwise'
+      new_episode:
+        desc: 'boolean to indicate whether the individual is the first detected in a new BRD episode'
+      episode_time:
+        desc: 'time when current BRD episode started from the point of view of the animal'
+      #--------------------------------
+      # TREATMENT
+      #--------------------------------
+      treated:
+        desc: 'boolean value, 1 if animal treated at least once, 0 otherwise'
+      nb_consecutive_doses:
+        desc: 'number of consecutive doses given to the animal during the same episode'
+      nb_doses_total:
+        desc: 'total number of doses given to the considered animal'
+      nb_doses_indiv:
+        desc: 'total number of doses given to the considered animal by individual treatment'
+      nb_doses_metaphylaxis:
+        desc: 'total number of doses given to the considered animal by metaphylaxis'
+      treated_only_once:
+        desc: 'boolean, 1 if the animals was treated exactly once (not accounging for possible antibioprevention) and still alive, 0 if not treated or treated multiple times or dead'
+      treatment_successful:
+        desc: 'boolean value, 1 if the treatment will succeed, 0 otherwise'
+      treat_time:
+        desc: 'time when the animal receives a treatment (updated over time), a negative value means no treatment received'
+      pen_metaphylaxis_done:
+        desc: 'boolean, 1 if metaphylaxis was already triggered in the pen, 0 otherwise'
+
+    
+    #  _____           _        _
+    # |  __ \         | |      | |
+    # | |__) | __ ___ | |_ ___ | |_ _   _ _ __   ___  ___
+    # |  ___/ '__/ _ \| __/ _ \| __| | | | '_ \ / _ \/ __|
+    # | |   | | | (_) | || (_) | |_| |_| | |_) |  __/\__ \
+    # |_|   |_|  \___/ \__\___/ \__|\__, | .__/ \___||___/
+    #                                __/ | |
+    #                               |___/|_|
+    
+    # SPECIFICATION OF INITIAL VARIABLE VALUES FOR SPECIFIC CASES
+    prototypes:
+      pen:
+        - default_pen:
+            desc: 'prototype to initialize pen variables'
+            pen_metaphylaxis_done: 0
+            pen_nb_false_positive: 0
+            pen_infection_duration: 0
+            pen_clinical_duration: 0
+            pen_nb_dead_treated_distinct: 0
+            pen_nb_dead_infected_distinct: 0
+            pen_nb_doses_dead: 0
+            pen_nb_doses_dead_indiv: 0
+            pen_nb_doses_dead_metaphylaxis: 0
+            pen_nb_detections: 0
+            pen_cases_missed: 0
+            pen_mh_cumulative_incidence: 0
+            pen_cumulative_C: 0
+            pen_cumulative_Mild: 0
+            pen_brsv_incidence: 0
+            pen_mh_incidence: 0
+            pen_brsv_cumulative_incidence: 0
+            pen_coinfection_cumulative_incidence: 0
+            pen_nb_deaths: 0
+            pen_cumulative_vax: "ROUND(prop_vax_on_arrival * pen_size)" # initialiser
+            nb_recovery: 0
+            pen_time_first_detection: -1
+            time_debut: '-1'
+            pen_infected: 0
+            pen_first_transmission: 0
+            severity: '0'
+            pente: '0'
+            lowrisk_pen: 0
+            mediumrisk_pen: 0
+            highrisk_pen: 0
+            metaphylaxis_time: -1 
+            
+     
+      calves:
+        #--------------------------------
+        # INITIALIZATION PROTOTYPES
+        #--------------------------------
+        - default_calf:
+            desc: 'default prototype applied to all animals before any further modification'
+            begin_with:
+              - brsv: S
+              - mhaemolytica: SMH
+            treat_state: NT
+            clinical_state: A
+            detection_state: U
+            episode_time: -1
+            treat_time: '- (delay_between_episodes + dur_T)'
+            nb_consecutive_doses: 0
+            treated: 0
+            treatment_successful: 0
+            treatment_preventive: 0
+            treated_only_once: 0
+            infected: 0
+            infected_brsv: 0
+            infected_mh: 0
+            incidence_brsv: 0
+            incidence_mh: 0
+            detected: 0
+            evolve_to_death: 0
+            evolve_to_C: 0
+            reactivation: 0
+            reactivation_Vax: 0
+            nb_doses_total: 'use_antibioprevention'
+            nb_doses_indiv: 0
+            nb_doses_metaphylaxis: 0 
+            pneumonia: NoPn
+    
+
+        - initial_Vax:
+            desc: 'prototype for initializing medium risk animals'
+            brsv: 'random(proportion_susceptible_medium_BRSV,0,proportion_recovered_medium_BRSV,0,0,proportion_carrier_medium_BRSV)'
+            mhaemolytica: 'random(proportion_susceptible_medium_Mh,0,0,proportion_carrier_medium_Mh)'
+            vax_status: Vax 
+        - initial_NonVax:
+            desc: 'prototype for initializing high risk animals'
+            brsv: 'random(proportion_susceptible_medium_BRSV,0,proportion_recovered_medium_BRSV,0,0,proportion_carrier_medium_BRSV)'
+            mhaemolytica: 'random(proportion_susceptible_medium_Mh,0,0,proportion_carrier_medium_Mh)'
+            vax_status: NonVax     
+        #--------------------------------
+        # MODIFICATION PROTOTYPES
+        #--------------------------------
+        - healthy:
+            desc: 'prototype for making individual recover after treatment'
+            mhaemolytica: RMH
+            nb_consecutive_doses: 0
+        - recovered_brsv:
+            desc: 'prototype for making individual recover after treatment'
+            brsv: R
+            nb_consecutive_doses: 0
+        - undetected:
+            desc: 'restore the Undetected status'
+            detection_state: U
+    
+    #  _____       _ _   _       _
+    # |_   _|     (_) | (_)     | |
+    #   | |  _ __  _| |_ _  __ _| |
+    #   | | | '_ \| | __| |/ _` | |
+    #  _| |_| | | | | |_| | (_| | |
+    # |_____|_| |_|_|\__|_|\__,_|_|
+    
+    #                      _ _ _   _
+    #                     | (_) | (_)
+    #   ___ ___  _ __   __| |_| |_ _  ___  _ __  ___
+    #  / __/ _ \| '_ \ / _` | | __| |/ _ \| '_ \/ __|
+    # | (_| (_) | | | | (_| | | |_| | (_) | | | \__ \
+    #  \___\___/|_| |_|\__,_|_|\__|_|\___/|_| |_|___/
+    
+    initial_conditions:
+      multipen: 
+        - prototype: default_pen
+          amount: 'number_pens'
+
+
+    
+
+     
+    #   ____        _               _
+    #  / __ \      | |             | |
+    # | |  | |_   _| |_ _ __  _   _| |_ ___
+    # | |  | | | | | __| '_ \| | | | __/ __|
+    # | |__| | |_| | |_| |_) | |_| | |_\__ \
+    #  \____/ \__,_|\__| .__/ \__,_|\__|___/
+    #                  | |
+    #                  |_|
+    
+    # TYPE AND PERIODICITY OF OUTPUTS
+    outputs:
+      type: csv
+      pen:
+        period: 1
+        extra_vars:
+          - metapop_nb_deaths
+          - pen_nb_false_positive
+          - metapop_nb_doses
+          - metapop_nb_doses_metaphylaxis
+          - metapop_nb_doses_indiv
+          - metapop_mh_cumulative_incidence
+          - metapop_brsv_cumulative_incidence  
+          - metapop_clinical_duration
+          - metapop_total_C
+          - metapop_total_Mild
+          - pen_metaphylaxis_done
+          - metapop_cumulative_C
+          - metapop_cumulative_Mild
+          - metapop_nb_cases_missed
+          - proportion_infected_mh
+          - proportion_infected_brsv
+          - proportion_coinfected
+          - total_population
+          - metapop_cumulative_vax
+          - pen_size
+          - number_pens
+
+
+
+    
+    
